@@ -1,4 +1,4 @@
-# Aplikasi Laporan Kinerja Kepala Tata Usaha — SMK Plus Pelita Nusantara
+# Aplikasi Laporan Kinerja Instruktur TKJ — SMK Plus Pelita Nusantara
 
 Aplikasi web sederhana: **Google Sheets** sebagai database, **Google Apps Script** sebagai backend/API, **GitHub Pages** sebagai tampilan (frontend).
 
