@@ -150,7 +150,15 @@
           <div class="field"><label>Tindak Lanjut</label><textarea id="m_Tindak_Lanjut"></textarea></div>
         </div>
         <div class="grid">
-          <div class="field"><label>Bukti/Dokumen</label><input type="text" id="m_Bukti_Dokumen"></div>
+          <div class="field">
+            <label>Bukti/Dokumen</label>
+            <input type="text" id="m_Bukti_Dokumen" placeholder="Tempel link Drive, atau unggah foto di bawah">
+            <div style="margin-top:6px; display:flex; gap:8px; align-items:center;">
+              <input type="file" id="m_Bukti_File" accept="image/*,.pdf" style="flex:1; font-size:12px;">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="uploadBukti()">Unggah</button>
+            </div>
+            <div id="m_Bukti_Status" style="font-size:11px; color:var(--muted); margin-top:4px;"></div>
+          </div>
           <div class="field"><label>Keterangan</label><input type="text" id="m_Keterangan"></div>
         </div>
         <div class="actions">
@@ -243,6 +251,39 @@ async function apiPost(payload){
 }
 function statusClass(s){ return 'badge-' + String(s||'').replace(/ /g,'_'); }
 function esc(v){ return (v===undefined||v===null) ? '' : String(v); }
+
+/* ================= UPLOAD BUKTI/DOKUMEN ================= */
+async function uploadBukti(){
+  const fileInput = document.getElementById('m_Bukti_File');
+  const statusEl = document.getElementById('m_Bukti_Status');
+  const file = fileInput.files[0];
+  if(!file){ statusEl.textContent = 'Pilih file dulu sebelum menekan Unggah.'; return; }
+  if(!API_URL){ statusEl.textContent = 'URL Apps Script belum diisi.'; return; }
+
+  statusEl.textContent = 'Mengunggah ' + file.name + '...';
+  try{
+    const base64 = await fileToBase64(file);
+    const result = await apiPost({
+      action: 'uploadFile',
+      data: { filename: file.name, mimeType: file.type, base64: base64 }
+    });
+    if(result.error) throw new Error(result.error);
+    document.getElementById('m_Bukti_Dokumen').value = result.url;
+    statusEl.textContent = 'Terunggah: ' + result.name;
+    fileInput.value = '';
+  }catch(err){
+    statusEl.textContent = 'Gagal unggah: ' + err.message;
+  }
+}
+
+function fileToBase64(file){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = ()=> resolve(reader.result.split(',')[1]); // buang prefix data:...;base64,
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
 
 /* ================= LAPORAN MINGGUAN ================= */
 let mingguanCache = [];
@@ -338,6 +379,7 @@ function editMingguan(id){
 function resetMingguanForm(){
   document.getElementById('formMingguan').reset();
   document.getElementById('m_No').value = '';
+  document.getElementById('m_Bukti_Status').textContent = '';
   document.getElementById('formMingguanTitle').textContent = 'Tambah Laporan Mingguan';
 }
 
