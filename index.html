@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Laporan Kinerja Kepala Tata Usaha — SMK Plus Pelita Nusantara</title>
+<style>
+  :root{
+    --navy:#1b2a4a;
+    --navy-light:#2c3e63;
+    --gold:#c99b3f;
+    --bg:#f4f6fb;
+    --card:#ffffff;
+    --text:#1f2937;
+    --muted:#6b7280;
+    --border:#e3e7ef;
+    --selesai:#2f9e5c;
+    --proses:#d69e2e;
+    --tertunda:#e0672a;
+    --tidak:#c0392b;
+    --radius:12px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Segoe UI', Roboto, -apple-system, sans-serif;
+    background:var(--bg);
+    color:var(--text);
+  }
+  header{
+    background:linear-gradient(135deg, var(--navy), var(--navy-light));
+    color:#fff;
+    padding:22px 28px;
+  }
+  header h1{margin:0; font-size:20px; font-weight:600;}
+  header p{margin:4px 0 0; font-size:13px; opacity:.8;}
+  #apiBar{
+    background:#fff9ec;
+    border-bottom:1px solid #f0dfb4;
+    padding:10px 28px;
+    font-size:13px;
+    display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+  }
+  #apiBar input{
+    flex:1; min-width:260px; padding:7px 10px; border:1px solid var(--border); border-radius:8px; font-size:13px;
+  }
+  #apiBar button{
+    padding:7px 14px; border:none; border-radius:8px; background:var(--navy); color:#fff; cursor:pointer; font-size:13px;
+  }
+  #apiStatus{font-size:12px; color:var(--muted);}
+  nav{
+    display:flex; gap:4px; padding:0 28px; background:#fff; border-bottom:1px solid var(--border);
+    overflow-x:auto;
+  }
+  nav button{
+    padding:14px 18px; border:none; background:none; cursor:pointer;
+    font-size:14px; font-weight:500; color:var(--muted); border-bottom:3px solid transparent;
+    white-space:nowrap;
+  }
+  nav button.active{color:var(--navy); border-bottom-color:var(--gold);}
+  main{padding:24px 28px; max-width:1200px; margin:0 auto;}
+  .card{
+    background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+    padding:20px; margin-bottom:20px;
+  }
+  .card h2{margin:0 0 14px; font-size:16px; color:var(--navy);}
+  .grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(220px,1fr)); gap:12px;}
+  label{display:block; font-size:12px; color:var(--muted); margin-bottom:4px; font-weight:600;}
+  input, select, textarea{
+    width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:8px; font-size:13px; font-family:inherit;
+  }
+  textarea{resize:vertical; min-height:44px;}
+  .field{margin-bottom:12px;}
+  .actions{display:flex; gap:8px; margin-top:10px;}
+  .btn{padding:9px 16px; border:none; border-radius:8px; cursor:pointer; font-size:13px; font-weight:600;}
+  .btn-primary{background:var(--navy); color:#fff;}
+  .btn-secondary{background:#eef0f4; color:var(--text);}
+  .btn-danger{background:#fdecea; color:var(--tidak);}
+  .btn-sm{padding:5px 10px; font-size:12px;}
+  table{width:100%; border-collapse:collapse; font-size:12.5px;}
+  th, td{padding:8px 10px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top;}
+  th{background:#f8f9fc; color:var(--muted); font-weight:600; position:sticky; top:0;}
+  tr:hover td{background:#fafbfe;}
+  .table-wrap{overflow-x:auto;}
+  .badge{padding:3px 9px; border-radius:20px; font-size:11px; font-weight:600; color:#fff; display:inline-block;}
+  .badge-Selesai{background:var(--selesai);}
+  .badge-Proses{background:var(--proses);}
+  .badge-Tertunda{background:var(--tertunda);}
+  .badge-Tidak_Dilaksanakan{background:var(--tidak);}
+  .stat-row{display:grid; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:12px; margin-bottom:20px;}
+  .stat{background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:16px; text-align:center;}
+  .stat .num{font-size:24px; font-weight:700; color:var(--navy);}
+  .stat .lbl{font-size:12px; color:var(--muted); margin-top:2px;}
+  .bar-outer{background:#eef0f4; border-radius:6px; height:8px; overflow:hidden; margin-top:6px;}
+  .bar-inner{background:var(--gold); height:100%;}
+  .empty{color:var(--muted); font-size:13px; padding:20px; text-align:center;}
+  .hidden{display:none;}
+  .loading{color:var(--muted); font-size:13px; padding:10px 0;}
+  @media (max-width:640px){ main{padding:16px;} header{padding:16px;} nav{padding:0 10px;} }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Laporan Kinerja Kepala Tata Usaha</h1>
+  <p>SMK Plus Pelita Nusantara — Tahun Ajaran <span id="periodeLabel">-</span></p>
+</header>
+
+<div id="apiBar">
+  <span>URL Apps Script:</span>
+  <input id="apiUrlInput" placeholder="https://script.google.com/macros/s/XXXXXXXX/exec">
+  <button onclick="saveApiUrl()">Simpan</button>
+  <span id="apiStatus"></span>
+</div>
+
+<nav>
+  <button class="tab-btn active" data-tab="mingguan">Laporan Mingguan</button>
+  <button class="tab-btn" data-tab="rekap">Rekap Tahunan</button>
+  <button class="tab-btn" data-tab="program">Program &amp; Tugas</button>
+</nav>
+
+<main>
+
+  <!-- ============ TAB: LAPORAN MINGGUAN ============ -->
+  <section id="tab-mingguan">
+    <div class="card">
+      <h2 id="formMingguanTitle">Tambah Laporan Mingguan</h2>
+      <form id="formMingguan">
+        <input type="hidden" id="m_No">
+        <div class="grid">
+          <div class="field"><label>Minggu Ke-</label><input type="number" id="m_Minggu_Ke_" required></div>
+          <div class="field"><label>Periode/Tanggal</label><input type="date" id="m_Periode_Tanggal" required></div>
+          <div class="field"><label>Bidang Kegiatan</label><input type="text" id="m_Bidang_Kegiatan" placeholder="cth. Kepegawaian, Keuangan"></div>
+          <div class="field"><label>Status</label>
+            <select id="m_Status">
+              <option>Selesai</option>
+              <option>Proses</option>
+              <option>Tertunda</option>
+              <option>Tidak Dilaksanakan</option>
+            </select>
+          </div>
+        </div>
+        <div class="field"><label>Uraian Tugas/Kegiatan</label><textarea id="m_Uraian_Tugas_Kegiatan"></textarea></div>
+        <div class="grid">
+          <div class="field"><label>Target/Hasil yang Diharapkan</label><textarea id="m_Target_Hasil_yang_Diharapkan"></textarea></div>
+          <div class="field"><label>Realisasi/Hasil</label><textarea id="m_Realisasi_Hasil"></textarea></div>
+        </div>
+        <div class="grid">
+          <div class="field"><label>Kendala/Permasalahan</label><textarea id="m_Kendala_Permasalahan"></textarea></div>
+          <div class="field"><label>Tindak Lanjut</label><textarea id="m_Tindak_Lanjut"></textarea></div>
+        </div>
+        <div class="grid">
+          <div class="field"><label>Bukti/Dokumen</label><input type="text" id="m_Bukti_Dokumen"></div>
+          <div class="field"><label>Keterangan</label><input type="text" id="m_Keterangan"></div>
+        </div>
+        <div class="actions">
+          <button type="submit" class="btn btn-primary">Simpan</button>
+          <button type="button" class="btn btn-secondary" onclick="resetMingguanForm()">Batal</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Daftar Laporan Mingguan</h2>
+      <div id="mingguanList" class="table-wrap"><p class="loading">Memuat data...</p></div>
+    </div>
+  </section>
+
+  <!-- ============ TAB: REKAP TAHUNAN ============ -->
+  <section id="tab-rekap" class="hidden">
+    <div class="stat-row" id="rekapStats"></div>
+    <div class="card">
+      <h2>Rekap per Bulan (Otomatis)</h2>
+      <div id="rekapTable" class="table-wrap"><p class="loading">Memuat data...</p></div>
+    </div>
+  </section>
+
+  <!-- ============ TAB: PROGRAM & TUGAS ============ -->
+  <section id="tab-program" class="hidden">
+    <div class="card">
+      <h2 id="formProgramTitle">Tambah Program &amp; Tugas</h2>
+      <form id="formProgram">
+        <input type="hidden" id="p_No">
+        <div class="grid">
+          <div class="field"><label>Bidang Tugas</label><input type="text" id="p_Bidang_Tugas" required></div>
+          <div class="field"><label>Frekuensi</label><input type="text" id="p_Frekuensi" placeholder="cth. Harian, Mingguan, Bulanan"></div>
+        </div>
+        <div class="field"><label>Tugas Pokok</label><textarea id="p_Tugas_Pokok__Tulis_Bidang_Jabatannya_"></textarea></div>
+        <div class="grid">
+          <div class="field"><label>Indikator/Hasil</label><textarea id="p_Indikator_Hasil"></textarea></div>
+          <div class="field"><label>Dokumen/Bukti</label><textarea id="p_Dokumen_Bukti"></textarea></div>
+        </div>
+        <div class="actions">
+          <button type="submit" class="btn btn-primary">Simpan</button>
+          <button type="button" class="btn btn-secondary" onclick="resetProgramForm()">Batal</button>
+        </div>
+      </form>
+    </div>
+    <div class="card">
+      <h2>Daftar Program &amp; Tugas</h2>
+      <div id="programList" class="table-wrap"><p class="loading">Memuat data...</p></div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+/* ================= KONFIGURASI ================= */
+let API_URL = localStorage.getItem('apiUrl') || '';
+document.getElementById('apiUrlInput').value = API_URL;
+
+function saveApiUrl(){
+  API_URL = document.getElementById('apiUrlInput').value.trim();
+  localStorage.setItem('apiUrl', API_URL);
+  document.getElementById('apiStatus').textContent = 'Tersimpan. Memuat data...';
+  loadAll();
+}
+
+/* ================= NAVIGASI TAB ================= */
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('main > section').forEach(s=>s.classList.add('hidden'));
+    btn.classList.add('active');
+    document.getElementById('tab-'+btn.dataset.tab).classList.remove('hidden');
+  });
+});
+
+/* ================= HELPER API ================= */
+async function apiGet(action){
+  if(!API_URL){ throw new Error('URL Apps Script belum diisi'); }
+  const res = await fetch(API_URL + '?action=' + action);
+  return res.json();
+}
+async function apiPost(payload){
+  if(!API_URL){ throw new Error('URL Apps Script belum diisi'); }
+  const res = await fetch(API_URL, {
+    method:'POST',
+    headers:{'Content-Type':'text/plain;charset=utf-8'}, // hindari preflight CORS
+    body: JSON.stringify(payload)
+  });
+  return res.json();
+}
+function statusClass(s){ return 'badge-' + String(s||'').replace(/ /g,'_'); }
+function esc(v){ return (v===undefined||v===null) ? '' : String(v); }
+
+/* ================= LAPORAN MINGGUAN ================= */
+let mingguanCache = [];
+
+async function loadMingguan(){
+  const el = document.getElementById('mingguanList');
+  try{
+    mingguanCache = await apiGet('getMingguan');
+    if(mingguanCache.error) throw new Error(mingguanCache.error);
+    renderMingguan();
+  }catch(err){
+    el.innerHTML = '<p class="empty">Gagal memuat: '+esc(err.message)+'</p>';
+  }
+}
+
+function renderMingguan(){
+  const el = document.getElementById('mingguanList');
+  if(!mingguanCache.length){ el.innerHTML = '<p class="empty">Belum ada data. Tambahkan laporan mingguan di atas.</p>'; return; }
+  const rows = mingguanCache.slice().sort((a,b)=> new Date(b['Periode/Tanggal']) - new Date(a['Periode/Tanggal']));
+  let html = '<table><thead><tr><th>Minggu</th><th>Tanggal</th><th>Bidang</th><th>Uraian</th><th>Status</th><th>Aksi</th></tr></thead><tbody>';
+  rows.forEach(r=>{
+    html += `<tr>
+      <td>${esc(r['Minggu Ke-'])}</td>
+      <td>${fmtDate(r['Periode/Tanggal'])}</td>
+      <td>${esc(r['Bidang Kegiatan'])}</td>
+      <td>${esc(r['Uraian Tugas/Kegiatan'])}</td>
+      <td><span class="badge ${statusClass(r['Status'])}">${esc(r['Status'])}</span></td>
+      <td>
+        <button class="btn btn-secondary btn-sm" onclick="editMingguan(${r['No']})">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteMingguan(${r['No']})">Hapus</button>
+      </td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  el.innerHTML = html;
+}
+
+function fmtDate(v){
+  if(!v) return '';
+  const d = new Date(v);
+  if(isNaN(d.getTime())) return esc(v);
+  return d.toLocaleDateString('id-ID', {day:'2-digit', month:'short', year:'numeric'});
+}
+
+document.getElementById('formMingguan').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const data = {
+    'No': document.getElementById('m_No').value || undefined,
+    'Minggu Ke-': Number(document.getElementById('m_Minggu_Ke_').value),
+    'Periode/Tanggal': document.getElementById('m_Periode_Tanggal').value,
+    'Bidang Kegiatan': document.getElementById('m_Bidang_Kegiatan').value,
+    'Uraian Tugas/Kegiatan': document.getElementById('m_Uraian_Tugas_Kegiatan').value,
+    'Target/Hasil yang Diharapkan': document.getElementById('m_Target_Hasil_yang_Diharapkan').value,
+    'Realisasi/Hasil': document.getElementById('m_Realisasi_Hasil').value,
+    'Kendala/Permasalahan': document.getElementById('m_Kendala_Permasalahan').value,
+    'Tindak Lanjut': document.getElementById('m_Tindak_Lanjut').value,
+    'Status': document.getElementById('m_Status').value,
+    'Bukti/Dokumen': document.getElementById('m_Bukti_Dokumen').value,
+    'Keterangan': document.getElementById('m_Keterangan').value
+  };
+  const isEdit = !!document.getElementById('m_No').value;
+  try{
+    const result = isEdit
+      ? await apiPost({action:'updateMingguan', data: Object.assign(data, {No: Number(document.getElementById('m_No').value)})})
+      : await apiPost({action:'addMingguan', data});
+    if(result.error) throw new Error(result.error);
+    resetMingguanForm();
+    await loadMingguan();
+    await loadRekap();
+  }catch(err){ alert('Gagal menyimpan: '+err.message); }
+});
+
+function editMingguan(id){
+  const r = mingguanCache.find(x=>Number(x['No'])===Number(id));
+  if(!r) return;
+  document.getElementById('m_No').value = r['No'];
+  document.getElementById('m_Minggu_Ke_').value = r['Minggu Ke-'];
+  const d = new Date(r['Periode/Tanggal']);
+  document.getElementById('m_Periode_Tanggal').value = isNaN(d.getTime()) ? '' : d.toISOString().slice(0,10);
+  document.getElementById('m_Bidang_Kegiatan').value = r['Bidang Kegiatan'] || '';
+  document.getElementById('m_Uraian_Tugas_Kegiatan').value = r['Uraian Tugas/Kegiatan'] || '';
+  document.getElementById('m_Target_Hasil_yang_Diharapkan').value = r['Target/Hasil yang Diharapkan'] || '';
+  document.getElementById('m_Realisasi_Hasil').value = r['Realisasi/Hasil'] || '';
+  document.getElementById('m_Kendala_Permasalahan').value = r['Kendala/Permasalahan'] || '';
+  document.getElementById('m_Tindak_Lanjut').value = r['Tindak Lanjut'] || '';
+  document.getElementById('m_Status').value = r['Status'] || 'Selesai';
+  document.getElementById('m_Bukti_Dokumen').value = r['Bukti/Dokumen'] || '';
+  document.getElementById('m_Keterangan').value = r['Keterangan'] || '';
+  document.getElementById('formMingguanTitle').textContent = 'Edit Laporan Mingguan (No '+id+')';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function resetMingguanForm(){
+  document.getElementById('formMingguan').reset();
+  document.getElementById('m_No').value = '';
+  document.getElementById('formMingguanTitle').textContent = 'Tambah Laporan Mingguan';
+}
+
+async function deleteMingguan(id){
+  if(!confirm('Hapus laporan minggu ini?')) return;
+  try{
+    const result = await apiPost({action:'deleteMingguan', id});
+    if(result.error) throw new Error(result.error);
+    await loadMingguan();
+    await loadRekap();
+  }catch(err){ alert('Gagal menghapus: '+err.message); }
+}
+
+/* ================= REKAP TAHUNAN ================= */
+async function loadRekap(){
+  const statEl = document.getElementById('rekapStats');
+  const tblEl = document.getElementById('rekapTable');
+  try{
+    const data = await apiGet('getRekap');
+    if(data.error) throw new Error(data.error);
+    renderRekap(data);
+  }catch(err){
+    statEl.innerHTML = '';
+    tblEl.innerHTML = '<p class="empty">Gagal memuat: '+esc(err.message)+'</p>';
+  }
+}
+
+function renderRekap(data){
+  const t = data.total;
+  document.getElementById('rekapStats').innerHTML = `
+    <div class="stat"><div class="num">${t['Kegiatan Direncanakan']}</div><div class="lbl">Total Kegiatan</div></div>
+    <div class="stat"><div class="num">${t['Kegiatan Selesai']}</div><div class="lbl">Selesai</div></div>
+    <div class="stat"><div class="num">${t['Kegiatan Proses']}</div><div class="lbl">Proses</div></div>
+    <div class="stat"><div class="num">${t['Kegiatan Tertunda']}</div><div class="lbl">Tertunda</div></div>
+    <div class="stat"><div class="num">${t['Persentase Capaian']}%</div><div class="lbl">Capaian Keseluruhan</div></div>
+  `;
+
+  let html = `<table><thead><tr>
+    <th>Bulan</th><th>Minggu</th><th>Rencana</th><th>Selesai</th><th>Proses</th><th>Tertunda</th><th>Tdk Dilaksanakan</th><th>Capaian</th>
+  </tr></thead><tbody>`;
+  data.bulanan.forEach(r=>{
+    html += `<tr>
+      <td>${esc(r['Bulan'])}</td>
+      <td>${esc(r['Jumlah Minggu'])}</td>
+      <td>${esc(r['Kegiatan Direncanakan'])}</td>
+      <td>${esc(r['Kegiatan Selesai'])}</td>
+      <td>${esc(r['Kegiatan Proses'])}</td>
+      <td>${esc(r['Kegiatan Tertunda'])}</td>
+      <td>${esc(r['Kegiatan Tidak Dilaksanakan'])}</td>
+      <td style="min-width:110px;">
+        ${r['Persentase Capaian']}%
+        <div class="bar-outer"><div class="bar-inner" style="width:${r['Persentase Capaian']}%"></div></div>
+      </td>
+    </tr>`;
+  });
+  html += `<tr style="font-weight:700;background:#f8f9fc;">
+    <td>TOTAL</td><td>-</td>
+    <td>${t['Kegiatan Direncanakan']}</td><td>${t['Kegiatan Selesai']}</td>
+    <td>${t['Kegiatan Proses']}</td><td>${t['Kegiatan Tertunda']}</td>
+    <td>${t['Kegiatan Tidak Dilaksanakan']}</td><td>${t['Persentase Capaian']}%</td>
+  </tr>`;
+  html += '</tbody></table>';
+  document.getElementById('rekapTable').innerHTML = html;
+
+  if(data.bulanan.length){
+    const first = data.bulanan[0].Bulan.split(' ')[1];
+    const last = data.bulanan[data.bulanan.length-1].Bulan.split(' ')[1];
+    document.getElementById('periodeLabel').textContent = first + '/' + last;
+  }
+}
+
+/* ================= PROGRAM & TUGAS ================= */
+let programCache = [];
+
+async function loadProgram(){
+  const el = document.getElementById('programList');
+  try{
+    programCache = await apiGet('getProgram');
+    if(programCache.error) throw new Error(programCache.error);
+    renderProgram();
+  }catch(err){
+    el.innerHTML = '<p class="empty">Gagal memuat: '+esc(err.message)+'</p>';
+  }
+}
+
+function renderProgram(){
+  const el = document.getElementById('programList');
+  if(!programCache.length){ el.innerHTML = '<p class="empty">Belum ada data. Tambahkan program & tugas di atas.</p>'; return; }
+  let html = '<table><thead><tr><th>Bidang Tugas</th><th>Tugas Pokok</th><th>Frekuensi</th><th>Indikator/Hasil</th><th>Aksi</th></tr></thead><tbody>';
+  programCache.forEach(r=>{
+    html += `<tr>
+      <td>${esc(r['Bidang Tugas'])}</td>
+      <td>${esc(r['Tugas Pokok (Tulis Bidang Jabatannya)'])}</td>
+      <td>${esc(r['Frekuensi'])}</td>
+      <td>${esc(r['Indikator/Hasil'])}</td>
+      <td>
+        <button class="btn btn-secondary btn-sm" onclick="editProgram(${r['No']})">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteProgram(${r['No']})">Hapus</button>
+      </td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  el.innerHTML = html;
+}
+
+document.getElementById('formProgram').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const data = {
+    'Bidang Tugas': document.getElementById('p_Bidang_Tugas').value,
+    'Tugas Pokok (Tulis Bidang Jabatannya)': document.getElementById('p_Tugas_Pokok__Tulis_Bidang_Jabatannya_').value,
+    'Frekuensi': document.getElementById('p_Frekuensi').value,
+    'Indikator/Hasil': document.getElementById('p_Indikator_Hasil').value,
+    'Dokumen/Bukti': document.getElementById('p_Dokumen_Bukti').value
+  };
+  const isEdit = !!document.getElementById('p_No').value;
+  try{
+    const result = isEdit
+      ? await apiPost({action:'updateProgram', data: Object.assign(data, {No: Number(document.getElementById('p_No').value)})})
+      : await apiPost({action:'addProgram', data});
+    if(result.error) throw new Error(result.error);
+    resetProgramForm();
+    await loadProgram();
+  }catch(err){ alert('Gagal menyimpan: '+err.message); }
+});
+
+function editProgram(id){
+  const r = programCache.find(x=>Number(x['No'])===Number(id));
+  if(!r) return;
+  document.getElementById('p_No').value = r['No'];
+  document.getElementById('p_Bidang_Tugas').value = r['Bidang Tugas'] || '';
+  document.getElementById('p_Tugas_Pokok__Tulis_Bidang_Jabatannya_').value = r['Tugas Pokok (Tulis Bidang Jabatannya)'] || '';
+  document.getElementById('p_Frekuensi').value = r['Frekuensi'] || '';
+  document.getElementById('p_Indikator_Hasil').value = r['Indikator/Hasil'] || '';
+  document.getElementById('p_Dokumen_Bukti').value = r['Dokumen/Bukti'] || '';
+  document.getElementById('formProgramTitle').textContent = 'Edit Program & Tugas (No '+id+')';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function resetProgramForm(){
+  document.getElementById('formProgram').reset();
+  document.getElementById('p_No').value = '';
+  document.getElementById('formProgramTitle').textContent = 'Tambah Program & Tugas';
+}
+
+async function deleteProgram(id){
+  if(!confirm('Hapus data program ini?')) return;
+  try{
+    const result = await apiPost({action:'deleteProgram', id});
+    if(result.error) throw new Error(result.error);
+    await loadProgram();
+  }catch(err){ alert('Gagal menghapus: '+err.message); }
+}
+
+/* ================= INIT ================= */
+async function loadAll(){
+  await Promise.all([loadMingguan(), loadRekap(), loadProgram()]);
+  document.getElementById('apiStatus').textContent = API_URL ? 'Terhubung' : '';
+}
+loadAll();
+</script>
+
+</body>
+</html>
